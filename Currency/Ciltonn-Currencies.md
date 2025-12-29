@@ -16,7 +16,7 @@
 - пакет с сервлетами лучше все же назвать servlets.
 
 Создание объектов одновременно с их объявлением как полей класса неправильно:
-```
+```java
 @WebServlet("/currencies")
 public class CurrenciesServlet extends HttpServlet {
 
@@ -26,7 +26,7 @@ public class CurrenciesServlet extends HttpServlet {
 ```
 Вместо непосредственного создания надо выполнить внедрение объектов. Для этого сначала
 поместим используемые объекты в контекст:
-```
+```java
 @WebListener
 public class AppContextListener implements ServletContextListener {
 
@@ -47,7 +47,7 @@ public class AppContextListener implements ServletContextListener {
 }
 ```
 а затем внедрим их в сервлет, используя метод init() :
-```
+```java
 @WebServlet("/currencies")
 public class CurrenciesServlet extends HttpServlet {
 
@@ -66,7 +66,7 @@ public class CurrenciesServlet extends HttpServlet {
 Сервлет - это транспортный слой между фронтендом и бэкендом, его задача - извлечь нужные поля из HttpServletRequest request,
  отдать их на обработку в сервис бэкенда, а затем результат поместить в HttpServletResponse response. Поэтому убираем из текущей реализации
 лишние операции:
-```
+```java
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
@@ -84,14 +84,14 @@ public class CurrenciesServlet extends HttpServlet {
     }
 ```
 - изменение заголовков
-```
+```java
         ...
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         ...
 ```
 убираем из всех методов во всех сервлетах и переносим их в отдельный фильтр:
-```
+```java
 import jakarta.servlet.*;
 import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletResponse;
@@ -112,7 +112,7 @@ public class JsonResponseFilter implements Filter {
 }
 ```
 - код, в котором производится преобразование ответа репозитория
-```
+```java
         ...
         List<Currency> currencies = currencyDaoImpl.findAll();
         List<CurrencyResponse> currencyResponse = currencies.stream()
@@ -121,7 +121,7 @@ public class JsonResponseFilter implements Filter {
         ...        
 ```
  убираем из сервлета и переносим в сервис:
-```
+```java
     public class CurrencyService {
 
     private final CurrencyDao currencyDaoImpl;
@@ -144,7 +144,7 @@ public class JsonResponseFilter implements Filter {
     }
 ```
 В итоге получаем такой сервлет:
-```
+```java
 @WebServlet("/currencies")
 public class CurrenciesServlet extends HttpServlet {
 
@@ -181,7 +181,7 @@ public class CurrenciesServlet extends HttpServlet {
 Аналогичные по смыслу изменения надо выполнить во всех сервлетах. 
 Валидацию входных параметров надо перенести в утилитный класс.
 Этих операций  
-```
+```java
         ...
         if((path == null) || (path.length() != 6)) {
             throw new InvalidParameterException("Invalid currency codes in path");
@@ -195,7 +195,7 @@ public class CurrenciesServlet extends HttpServlet {
         ...
 ```        
 и этих
-```
+```java
         ...
         if (parameter == null) {
             throw new InvalidParameterException("Missing parameter rate");
@@ -230,7 +230,7 @@ public class CurrenciesServlet extends HttpServlet {
 
 ## DTO пакет
 Вместо классов, используемых в качестве моделей для request и response
-```
+```java
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -243,7 +243,7 @@ public class CurrencyRequest {
 }
 ```
 лучше использовать Record:
-```
+```java
 public record CurrencyReqDto(String code, String name, String sign) {
 }
 ```
